@@ -10,7 +10,7 @@ A PHP-based web platform inspired by Quora and Reddit, featuring user posts, log
 
 ## Project Structure
 
-/AI_Forum_PHP_Project
+```/AI_Forum_PHP_Project
 ├── /app
 │   ├── /Controllers    # Logic for posts, users, admin
 │   ├── /Models         # Data models (Post, User)
