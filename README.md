@@ -2,6 +2,12 @@
 
 A PHP-based web platform inspired by Quora and Reddit, featuring user posts, login/register, CRUD operations, and admin management. Built with MVC structure, Bootstrap, and MySQL.
 
+## Project Demo Video
+
+Watch my AI Forum project in action! This short video shows how users login, create posts, and how the admin dashboard works:
+
+AI Forum Demo Video : ''' https://youtu.be/abc123](https://drive.google.com/file/d/1vxjWe2lne-OEJDqYkYJygYdvLDhA_op_/view?usp=sharing&t=6
+
 ## Features
 - **User Features:** Register, login, create/edit/delete posts, view posts.
 - **Admin Features:** Manage users and posts via a dashboard.
