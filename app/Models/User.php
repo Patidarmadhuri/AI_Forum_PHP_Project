@@ -18,19 +18,28 @@ class User {
     }
 
     public function login($email, $password) {
-        echo "Debug: Entering User::login with email = $email<br>";
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        echo "Debug: User fetched: ";
-        var_dump($user);
-        echo "<br>";
-        if ($user && password_verify($password, $user['password'])) {
-            echo "Debug: Password verified<br>";
-            return $user;
+        
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'User is not authorized'
+            ];
         }
-        echo "Debug: Password verification failed or no user found<br>";
-        return false;
+        
+        if (password_verify($password, $user['password'])) {
+            return [
+                'success' => true,
+                'user' => $user
+            ];
+        }
+        
+        return [
+            'success' => false,
+            'message' => 'Incorrect password'
+        ];
     }
 
     public function getAllUsers() {

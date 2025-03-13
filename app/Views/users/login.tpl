@@ -18,12 +18,12 @@
                 <?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?>
             </div>
         <?php endif; ?>
-        <?php if (isset($_SESSION['error_message'])): ?>
+        <?php if (isset($error_message) && !empty($error_message)): ?>
             <div class="alert alert-danger">
-                <?php echo htmlspecialchars($_SESSION['error_message']); unset($_SESSION['error_message']); ?>
+                <?php echo htmlspecialchars($error_message); ?>
             </div>
         <?php endif; ?>
-        <form method="POST" action="<?php echo $basePath; ?>/login">
+        <form method="POST" action="<?php echo htmlspecialchars($basePath . '/login'); ?>">
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
                 <input type="email" class="form-control" id="email" name="email" required placeholder="Enter your email">
@@ -34,8 +34,8 @@
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>
-        <p class="text-center mt-3">Don't have an account? <a href="<?php echo $basePath; ?>/signup">Sign Up</a></p>
-        <p class="text-center mt-2"><a href="<?php echo $basePath; ?>/" class="btn btn-primary">Back to Home</a></p>
+        <p class="text-center mt-3">Don't have an account? <a href="<?php echo htmlspecialchars($basePath . '/signup'); ?>">Sign Up</a></p>
+        <p class="text-center mt-2"><a href="<?php echo htmlspecialchars($basePath . '/'); ?>" class="btn btn-primary">Back to Home</a></p>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

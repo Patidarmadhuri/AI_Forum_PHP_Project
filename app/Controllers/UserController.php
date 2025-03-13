@@ -10,6 +10,7 @@ class UserController extends Controller {
             session_start();
         }
     }
+
     public function signup() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
@@ -38,35 +39,43 @@ class UserController extends Controller {
         if (isset($_SESSION['user_id'])) {
             $this->redirect('/AI_Forum_PHP_Project/public/');
         }
+        
+        $error_message = ''; // Local variable to pass to view
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
             $password = $_POST['password'];
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $_SESSION['error_message'] = 'Invalid email format';
+                $error_message = 'Invalid email format';
             } else {
                 $userModel = new User();
-                $user = $userModel->login($email, $password);
-                if ($user) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['is_admin'] = (int) $user['is_admin'];
+                $result = $userModel->login($email, $password);
+                
+                if ($result['success']) {
+                    $_SESSION['user_id'] = $result['user']['id'];
+                    $_SESSION['username'] = $result['user']['username'];
+                    $_SESSION['is_admin'] = (int) $result['user']['is_admin'];
                     $this->redirect('/AI_Forum_PHP_Project/public/');
                 } else {
-                    $_SESSION['error_message'] = 'Invalid login credentials';
+                    $_SESSION['error_message'] = $result['message'];
+                    $error_message = $result['message']; // Set local variable
+                    session_write_close(); // Ensure session is saved
                 }
             }
         }
+        
         $this->view('users/login', [
-            'basePath' => '/AI_Forum_PHP_Project/public'
+            'basePath' => '/AI_Forum_PHP_Project/public',
+            'error_message' => $error_message // Pass to view
         ]);
     }
 
-    // Add this logout method
     public function logout() {
-        session_start(); // Ensure session is active
-        session_unset(); // Clear all session variables
-        session_destroy(); // Destroy the session
+        session_start();
+        session_unset();
+        session_destroy();
         $this->redirect('/AI_Forum_PHP_Project/public/');
     }
 
