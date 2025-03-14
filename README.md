@@ -27,7 +27,7 @@ This project is ideal for beginners learning PHP, MVC architecture, and web deve
 
 Watch my AI Forum project in action! This short video shows how users login, create posts, and how the admin dashboard works:
 
-[AI Forum Demo Video](https://drive.google.com/file/d/1vxjWe2lne-OEJDqYkYJygYdvLDhA_op_/view?usp=sharing&t=6)
+[AI Forum Demo Video](https://drive.google.com/file/d/1bZhIlRYWIi_1rOumVX18ozZk3isLMR8z/view?ts=67d496ec)
 
 ## Features
 
