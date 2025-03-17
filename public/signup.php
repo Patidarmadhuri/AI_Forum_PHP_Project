@@ -1,43 +1,61 @@
 <?php
 session_start();
 
-// Check if the form is submitted
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Database connection
-    $mysqli = new mysqli('localhost', 'root', '', 'forum_db');
+$mysqli = new mysqli('localhost', 'root', '', 'forum_db');
 
-    if ($mysqli->connect_error) {
-        die("Connection failed: " . $mysqli->connect_error);
+if ($mysqli->connect_error) {
+    die("Connection failed: " . $mysqli->connect_error);
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password'];
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error_message'] = 'Invalid email format.';
+        header('Location: /AI_Forum_PHP_Project/public/signup.php');
+        exit();
     }
 
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
+    if (!validatePassword($password)) {
+        $_SESSION['error_message'] = 'Password must be at least 8 characters long and include uppercase letters, numbers, and special characters.';
+        header('Location: /AI_Forum_PHP_Project/public/signup.php');
+        exit();
+    }
 
-    // Prepare SQL query to check if email already exists
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
     $stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
-    
+
     if ($stmt->num_rows > 0) {
         $_SESSION['error_message'] = 'Email is already registered.';
     } else {
-        // Prepare SQL query to insert new user
         $stmt = $mysqli->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $username, $email, $password);
-        
+        $stmt->bind_param("sss", $username, $email, $hashed_password);
+
         if ($stmt->execute()) {
             $_SESSION['success_message'] = 'Account created successfully! Please log in.';
             header('Location: /AI_Forum_PHP_Project/public/login.php');
             exit();
         } else {
-            $_SESSION['error_message'] = 'Something went wrong. Please try again.';
+            $_SESSION['error_message'] = 'An unexpected error occurred. Please try again.';
         }
     }
 
     $stmt->close();
     $mysqli->close();
+}
+
+function validatePassword($password) {
+    return strlen($password) >= 8 &&
+           preg_match('/[A-Z]/', $password) &&
+           preg_match('/[a-z]/', $password) &&
+           preg_match('/[0-9]/', $password) &&
+           preg_match('/[^a-zA-Z0-9]/', $password);
 }
 ?>
 <!DOCTYPE html>
@@ -49,23 +67,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-
     <div class="container mt-5">
         <h2>Sign Up</h2>
 
-        <!-- Display error message if any -->
         <?php if (isset($_SESSION['error_message'])): ?>
             <div class="alert alert-danger">
-                <?php echo $_SESSION['error_message']; ?>
-                <?php unset($_SESSION['error_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['error_message']); unset($_SESSION['error_message']); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Display success message if any -->
         <?php if (isset($_SESSION['success_message'])): ?>
             <div class="alert alert-success">
-                <?php echo $_SESSION['success_message']; ?>
-                <?php unset($_SESSION['success_message']); ?>
+                <?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?>
             </div>
         <?php endif; ?>
 
@@ -81,6 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+                <small class="form-text text-muted">
+                    Use at least 8 characters with a mix of uppercase letters, lowercase letters, numbers, and special characters (e.g., @, #, $).
+                </small>
             </div>
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
@@ -89,6 +105,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p>Already have an account? <a href="/AI_Forum_PHP_Project/public/login.php">Login</a></p>
         </div>
     </div>
-
 </body>
 </html>

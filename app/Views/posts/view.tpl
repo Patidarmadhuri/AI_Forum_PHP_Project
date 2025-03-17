@@ -13,7 +13,11 @@
         <div class="container">
             <a class="navbar-brand" href="<?php echo $basePath; ?>/">AI Forum</a>
             <div class="d-flex">
-                <a href="<?php echo $basePath; ?>/" class="btn btn-primary me-2">Back to Home</a>
+                <?php if ($is_admin): ?>
+                    <a href="<?php echo $basePath; ?>/admin/posts" class="btn btn-primary me-2">Back to Posts</a>
+                <?php else: ?>
+                    <a href="<?php echo $basePath; ?>/" class="btn btn-primary me-2">Back to Home</a>
+                <?php endif; ?>
                 <?php if ($is_logged_in): ?>
                     <a href="<?php echo $basePath; ?>/logout" class="btn btn-danger">Logout</a>
                 <?php else: ?>
@@ -40,7 +44,11 @@
                 <p><?php echo nl2br(htmlspecialchars($post['content'])); ?></p>
             </div>
             <div class="card-footer">
-                <a href="<?php echo $basePath; ?>/" class="btn btn-primary">Back to Home</a>
+                <?php if ($is_admin): ?>
+                    <a href="<?php echo $basePath; ?>/admin/posts" class="btn btn-primary">Back to Posts</a>
+                <?php else: ?>
+                    <a href="<?php echo $basePath; ?>/" class="btn btn-primary">Back to Home</a>
+                <?php endif; ?>
                 <?php if ($is_logged_in && ($post['user_id'] == $_SESSION['user_id'] || $is_admin)): ?>
                     <a href="<?php echo $basePath; ?>/post/edit/<?php echo $post['id']; ?>" class="btn btn-warning">
                         <i class="fas fa-edit"></i> Edit

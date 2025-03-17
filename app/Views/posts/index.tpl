@@ -143,13 +143,13 @@
                                 <h5 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h5>
                                 <p class="card-text text-muted"><?php echo substr(htmlspecialchars($post['content']), 0, 100) . '...'; ?></p>
                                 <a href="<?php echo $basePath; ?>/post/<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">View</a>
-                                <?php if ($is_logged_in && ($post['user_id'] == $_SESSION['user_id'] || $is_admin)): ?>
-                                    <a href="<?php echo $basePath; ?>/post/edit/<?php echo $post['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                                    <a href="<?php echo $basePath; ?>/post/delete/<?php echo $post['id']; ?>" 
-                                       class="btn btn-danger btn-sm" 
-                                       onclick="return confirm('Are you sure?')">Delete</a>
-                                <?php endif; ?>
-                            </div>
+                                <?php if ($is_logged_in && isset($post['user_id']) && ($post['user_id'] == $_SESSION['user_id'] || $is_admin)): ?>
+    <a href="<?php echo $basePath; ?>/post/edit/<?php echo $post['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
+    <a href="<?php echo $basePath; ?>/post/delete/<?php echo $post['id']; ?>" 
+       class="btn btn-danger btn-sm" 
+       onclick="return confirm('Are you sure?')">Delete</a>
+<?php endif; ?>
+          </div>
                         </div>
                     </div>
                 <?php endforeach; ?>

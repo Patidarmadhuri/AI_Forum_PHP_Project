@@ -1,13 +1,28 @@
 <?php
+$autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    die("Error: Could not find autoload.php at $autoloadPath");
+}
+require_once $autoloadPath;
+
 use Dotenv\Dotenv;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+try {
+    $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+    $dotenv->load();
+} catch (\Exception $e) {
+    error_log("Error loading .env file: " . $e->getMessage());
+    die("Error: Failed to load environment variables.");
+}
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->load();
+function ensureEnvVariable($key) {
+    if (!isset($_ENV[$key])) {
+        die("Error: $key is not defined in the .env file.");
+    }
+}
 
+ensureEnvVariable('BASE_URL');
 define('BASE_URL', $_ENV['BASE_URL']);
-define('DB_HOST', $_ENV['DB_HOST']);
-define('DB_NAME', $_ENV['DB_NAME']);
-define('DB_USER', $_ENV['DB_USER']);
-define('DB_PASS', $_ENV['DB_PASS']);
+define('BASE_PATH', rtrim($_ENV['BASE_URL'], '/'));
+
+define('DEBUG_MODE', $_ENV['DEBUG_MODE'] ?? false);

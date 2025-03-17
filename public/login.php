@@ -1,15 +1,12 @@
 <?php
 session_start();
 
-// Redirect to posts page if already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: /AI_Forum_PHP_Project/public/posts.php'); // Update this to match the correct page
-    exit();
+    header('Location: /AI_Forum_PHP_Project/public/posts.php');
+    exit;
 }
 
-// Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Database connection
     $mysqli = new mysqli('localhost', 'root', '', 'forum_db');
 
     if ($mysqli->connect_error) {
@@ -19,22 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Prepare SQL query to check user
     $stmt = $mysqli->prepare("SELECT id, password FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
-    
-    // If email exists, verify the password
+
     if ($stmt->num_rows > 0) {
         $stmt->bind_result($user_id, $hashed_password);
         $stmt->fetch();
-        
-        // Verify password
+
         if (password_verify($password, $hashed_password)) {
-            // Set session variables
             $_SESSION['user_id'] = $user_id;
-            header('Location: /AI_Forum_PHP_Project/public/posts.php'); // Redirect to posts page
+            header('Location: /AI_Forum_PHP_Project/public/posts.php');
             exit();
         } else {
             $_SESSION['error_message'] = 'Incorrect password.';
@@ -42,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $_SESSION['error_message'] = 'No user found with that email address.';
     }
-    
+
     $stmt->close();
     $mysqli->close();
 }
@@ -60,10 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="container mt-5">
         <h2>Login</h2>
 
-        <!-- Display error message if any -->
         <?php if (isset($_SESSION['error_message'])): ?>
             <div class="alert alert-danger">
-                <?php echo $_SESSION['error_message']; ?>
+                <?php echo htmlspecialchars($_SESSION['error_message']); ?>
                 <?php unset($_SESSION['error_message']); ?>
             </div>
         <?php endif; ?>

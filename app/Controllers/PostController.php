@@ -2,126 +2,213 @@
 namespace App\Controllers;
 
 use App\Models\Post;
-use App\Core\Controller;
 
 class PostController extends Controller {
     public function __construct() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
     }
 
     public function index() {
         $postModel = new Post();
-        $search = $_GET['search'] ?? '';
-        $posts = $search ? $postModel->searchPosts($search) : $postModel->getAllPosts();
+        $search    = $_GET['search'] ?? '';
+        $posts     = $search ? $postModel->searchPosts($search) : $postModel->getAllPosts();
+
+        if (empty($posts)) {
+            $_SESSION['message'] = 'No posts found matching your search.';
+        }
+
         $this->view('posts/index', [
-            'posts' => $posts,
-            'search' => $search,
+            'posts'        => $posts,
+            'search'       => htmlspecialchars($search),
             'is_logged_in' => isset($_SESSION['user_id']),
-            'is_admin' => $_SESSION['is_admin'] ?? false,
-            'basePath' => '/AI_Forum_PHP_Project/public',
-            'current_page' => 'home',
-            'previous_url' => $_SERVER['REQUEST_URI']
+            'is_admin'     => $_SESSION['is_admin'] ?? false,
+            'basePath'     => BASE_PATH,
+            'current_page' => 'home'
         ]);
     }
 
     public function displayPost($id) {
         $postModel = new Post();
-        $post = $postModel->getPostById($id);
+        $post      = $postModel->getPostById($id);
+
         if (!$post) {
-            http_response_code(404);
-            echo "Post not found";
+            $this->renderError(404, 'Post not found');
             return;
         }
+
         $this->view('posts/view', [
-            'post' => $post,
+            'post'         => $post,
             'is_logged_in' => isset($_SESSION['user_id']),
+            'is_admin'     => $_SESSION['is_admin'] ?? false,
+            'basePath'     => BASE_PATH
+        ]);
+    }
+
+    public function createPostForm() {
+        $this->ensureLoggedIn();
+
+        $this->view('posts/create', [
+            'basePath' => BASE_PATH,
             'is_admin' => $_SESSION['is_admin'] ?? false,
-            'basePath' => '/AI_Forum_PHP_Project/public'
+            'title'    => '',
+            'content'  => '',
+            'errors'   => []
         ]);
     }
 
     public function create() {
-        if (!isset($_SESSION['user_id'])) {
-            $this->redirect('/AI_Forum_PHP_Project/public/login');
-        }
-    
-        $title = '';
+        $this->ensureLoggedIn();
+
+        $title   = '';
         $content = '';
-        $errors = [];
-    
+        $errors  = [];
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
-            $content = filter_var($_POST['content'], FILTER_SANITIZE_STRING);
+            $title   = trim($_POST['title']);
+            $content = trim($_POST['content']);
             $user_id = $_SESSION['user_id'];
-    
-            $postModel = new Post();
-            if ($postModel->createPost($user_id, $title, $content)) {
-                $_SESSION['message'] = 'Post created successfully';
-                $this->redirect('/AI_Forum_PHP_Project/public/');
-            } else {
-                $_SESSION['error_message'] = 'Failed to create post';
-                $errors[] = 'Failed to create post';
+
+            $errors = $this->validatePostData($title, $content);
+            if (empty($errors)) {
+                $postModel = new Post();
+
+                try {
+                    if ($postModel->createPost($user_id, $title, $content)) {
+                        $_SESSION['message'] = 'Post created successfully';
+                        $this->redirect(BASE_PATH . '/');
+                    } else {
+                        $errors[] = 'Failed to create post';
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = $e->getMessage();
+                }
             }
         }
-    
+
         $this->view('posts/create', [
-            'basePath' => '/AI_Forum_PHP_Project/public',
-            'title' => $title,
-            'content' => $content,
-            'errors' => $errors
+            'basePath' => BASE_PATH,
+            'is_admin' => $_SESSION['is_admin'] ?? false,
+            'title'    => htmlspecialchars($title),
+            'content'  => htmlspecialchars($content),
+            'errors'   => $errors
         ]);
     }
 
-    public function edit($id) {
-        if (!isset($_SESSION['user_id'])) {
-            $this->redirect('/AI_Forum_PHP_Project/public/login');
-        }
+    public function editPostForm($id) {
+        $this->ensureLoggedIn();
+
         $postModel = new Post();
-        $post = $postModel->getPostById($id);
-        if (!$post || ($post['user_id'] != $_SESSION['user_id'] && !$_SESSION['is_admin'])) {
-            $_SESSION['error_message'] = 'Unauthorized';
-            $this->redirect('/AI_Forum_PHP_Project/public/');
+        $post      = $postModel->getPostById($id);
+
+        $this->authorizeUser($post['user_id'], $_SESSION['is_admin'] ?? false);
+
+        $this->view('posts/edit', [
+            'post'     => $post,
+            'basePath' => BASE_PATH,
+            'errors'   => []
+        ]);
+    }
+
+    public function update($id) {
+        $this->ensureLoggedIn();
+
+        $postModel = new Post();
+        $post      = $postModel->getPostById($id);
+
+        $this->authorizeUser($post['user_id'], $_SESSION['is_admin'] ?? false);
+
+        $title   = trim($_POST['title']);
+        $content = trim($_POST['content']);
+
+        $errors = $this->validatePostData($title, $content);
+        if (!empty($errors)) {
+            $this->view('posts/edit', [
+                'post'     => $post,
+                'basePath' => BASE_PATH,
+                'errors'   => $errors
+            ]);
+            return;
         }
-    
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
-            $content = filter_var($_POST['content'], FILTER_SANITIZE_STRING);
+
+        try {
             if ($postModel->updatePost($id, $title, $content)) {
                 $_SESSION['message'] = 'Post updated successfully';
-                $this->redirect('/AI_Forum_PHP_Project/public/');
+                $this->redirect(BASE_PATH . '/');
             } else {
                 $_SESSION['error_message'] = 'Failed to update post';
+                $this->redirect(BASE_PATH . '/post/edit/' . $id);
             }
+        } catch (\Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            $this->redirect(BASE_PATH . '/post/edit/' . $id);
         }
-    
-        $this->view('posts/edit', [
-            'post' => $post,
-            'basePath' => '/AI_Forum_PHP_Project/public'
+    }
+
+    public function confirmDelete($id) {
+        $this->ensureLoggedIn();
+
+        $postModel = new Post();
+        $post      = $postModel->getPostById($id);
+
+        $this->authorizeUser($post['user_id'], $_SESSION['is_admin'] ?? false);
+
+        $this->view('posts/confirm_delete', [
+            'post'     => $post,
+            'basePath' => BASE_PATH,
         ]);
     }
 
     public function delete($id) {
-        if (!isset($_SESSION['user_id'])) {
-            $this->redirect('/AI_Forum_PHP_Project/public/login');
-        }
+        $this->ensureLoggedIn();
+
         $postModel = new Post();
-        $post = $postModel->getPostById($id);
-        if (!$post || ($post['user_id'] != $_SESSION['user_id'] && !$_SESSION['is_admin'])) {
-            $_SESSION['error_message'] = 'Unauthorized';
-            $this->redirect('/AI_Forum_PHP_Project/public/');
+        $post      = $postModel->getPostById($id);
+
+        $this->authorizeUser($post['user_id'], $_SESSION['is_admin'] ?? false);
+
+        try {
+            if ($postModel->deletePost($id)) {
+                $_SESSION['message'] = 'Post deleted successfully';
+            } else {
+                $_SESSION['error_message'] = 'Failed to delete post';
+            }
+        } catch (\Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
         }
-        if ($postModel->deletePost($id)) {
-            $_SESSION['message'] = 'Post deleted successfully';
-        } else {
-            $_SESSION['error_message'] = 'Failed to delete post';
-        }
-        $this->redirect('/AI_Forum_PHP_Project/public/');
+
+        $this->redirect(BASE_PATH . '/');
     }
 
-    protected function redirect($url) {
-        header("Location: $url");
-        exit();
+    private function validatePostData($title, $content) {
+        $errors = [];
+        if (empty(trim($title))) {
+            $errors[] = 'Title is required.';
+        }
+        if (empty(trim($content))) {
+            $errors[] = 'Content is required.';
+        }
+        return $errors;
+    }
+
+    protected function ensureLoggedIn() {
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+            $this->redirect(BASE_PATH . '/login');
+        }
+    }
+
+    protected function authorizeUser($userId, $isAdmin = false) {
+        if ($userId != $_SESSION['user_id'] && !$isAdmin) {
+            $_SESSION['error_message'] = 'Unauthorized';
+            $this->redirect(BASE_PATH . '/');
+        }
+    }
+
+    protected function renderError($code, $message) {
+        http_response_code($code);
+        $this->view('errors/404', [
+            'message'  => $message,
+            'basePath' => BASE_PATH
+        ]);
+        exit;
     }
 }

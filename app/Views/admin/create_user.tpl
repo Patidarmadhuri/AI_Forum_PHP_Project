@@ -9,17 +9,26 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="<?php echo $basePath; ?>/">AI Forum</a>
+            <a class="navbar-brand" href="<?php echo htmlspecialchars($basePath); ?>/">AI Forum</a>
             <div class="d-flex">
-                <a href="<?php echo $basePath; ?>/admin/users" class="btn btn-primary me-2">Back to Users</a>
-                <a href="<?php echo $basePath; ?>/logout" class="btn btn-danger">Logout</a>
+                <a href="<?php echo htmlspecialchars($basePath); ?>/admin/users" class="btn btn-primary me-2">Back to Users</a>
+                <a href="<?php echo htmlspecialchars($basePath); ?>/logout" class="btn btn-danger">Logout</a>
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
-        <h2>Create New User</h2>
-        <form method="POST" action="<?php echo $basePath; ?>/admin/users/create">
+        <h2>Create User</h2>
+
+        <?php if (!empty($errors)): ?>
+            <div class="alert alert-danger">
+                <?php foreach ($errors as $error): ?>
+                    <p><?php echo htmlspecialchars($error); ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="<?php echo htmlspecialchars($basePath); ?>/admin/users/create" method="POST">
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
                 <input type="text" class="form-control" id="username" name="username" required>
@@ -34,10 +43,10 @@
             </div>
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin">
-                <label class="form-check-label" for="is_admin">Is Admin</label>
+                <label class="form-check-label" for="is_admin">Is Admin?</label>
             </div>
-            <button type="submit" class="btn btn-primary">Create User</button>
-            <a href="<?php echo $basePath; ?>/admin/users" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success">Create User</button>
+            <a href="<?php echo htmlspecialchars($basePath); ?>/admin/users" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 </body>

@@ -1,14 +1,20 @@
 <?php
 session_start();
 
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+chdir(__DIR__ . '/../..');
+
 require __DIR__ . '/../vendor/autoload.php';
-require_once '../app/bootstrap.php';
-// echo "Debug: index.php loaded<br>";
+require_once __DIR__ . '/../app/Config/config.php';
 
 use App\Core\Router;
 
-$router = new Router();
-$router->route($_SERVER['REQUEST_URI']);
+try {
+    $router = new Router();
+    $router->route($_SERVER['REQUEST_URI']);
+} catch (\Exception $e) {
+    error_log("Error in index.php: " . $e->getMessage());
+    http_response_code(500);
+    $_SESSION['error_message'] = 'An unexpected error occurred. Please try again later.';
+    header('Location: ' . BASE_PATH . '/');
+    exit;
+}

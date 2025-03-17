@@ -12,30 +12,39 @@ class User {
     }
 
     public function register($username, $email, $password, $is_admin = 0) {
+        $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+            return 'email_exists';
+        }
+
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
         $stmt = $this->db->prepare("INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, ?)");
-        return $stmt->execute([$username, $email, $hashed_password, $is_admin]);
+        $success = $stmt->execute([$username, $email, $hashed_password, $is_admin]);
+
+        return $success ? true : false;
     }
 
     public function login($email, $password) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$user) {
             return [
                 'success' => false,
                 'message' => 'User is not authorized'
             ];
         }
-        
+
         if (password_verify($password, $user['password'])) {
             return [
                 'success' => true,
                 'user' => $user
             ];
         }
-        
+
         return [
             'success' => false,
             'message' => 'Incorrect password'
